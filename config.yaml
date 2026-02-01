@@ -1,0 +1,28 @@
+# Semiconductor Supply Chain Analytics — Pipeline Configuration
+
+ingestion:
+  start_date: "2020-01-01"
+  end_date: "2026-01-31"
+
+universe:
+  equipment:
+    - ASML
+    - KLAC
+    - LRCX
+    - AMAT
+  foundry:
+    - TSM          
+  designers:
+    - NVDA
+    - AVGO
+    - AMD
+    - QCOM
+    - TXN
+    - MRVL
+  idms:
+    - MU
+    - INTC
+  benchmarks:
+    - SMH
+    - SOXX
+    - SPY
