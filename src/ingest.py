@@ -27,6 +27,9 @@ def fetch_ticker(ticker, start_date, end_date):
         print(f"Fetching {ticker}...")
         df = yf.download(ticker, start=start_date, end=end_date, auto_adjust = True, progress=False)
 
+        if isinstance(df.columns, pd.MultiIndex):
+            df.columns = df.columns.get_level_values(0)
+
         if df.empty:
             print(f"  {ticker}: No data returned")
             return None
@@ -43,7 +46,6 @@ def fetch_ticker(ticker, start_date, end_date):
         print(f"  {ticker}: FAILED - {e}")
         return None
 
-
 def save_or_append_ticker(ticker, df):
     """
     Save a ticker's DataFrame to data/raw/{TICKER}.csv
@@ -55,14 +57,13 @@ def save_or_append_ticker(ticker, df):
 
     if os.path.exists(filepath):
         df_old = pd.read_csv(filepath)
-        df_old['Date'] = pd.to_datetime(df_old['Date'])  # ALREADY DOING THIS
 
-        df['Date'] = pd.to_datetime(df['Date'])  # ADD THIS - convert new data's dates too
+        df_old['Date'] = pd.to_datetime(df_old['Date'])
+        df['Date'] = pd.to_datetime(df['Date'])
 
         df_combined = pd.concat([df_old, df], ignore_index=True)
 
-        df_combined = df_combined.drop_duplicates(subset=["Date"]).sort_values('Date')
-        print(f"  DEBUG: df_combined has {len(df_combined)} rows, last date: {df_combined['Date'].max()}")  # ADD THIS
+        df_combined['Date'] = df_combined['Date'].dt.strftime('%Y-%m-%d')
 
         df_combined.to_csv(filepath, index=False)
         print(f"  {ticker}: Appended {len(df)} new rows (total: {len(df_combined)})")
@@ -71,11 +72,9 @@ def save_or_append_ticker(ticker, df):
         df.to_csv(filepath, index=False)
         print(f"  {ticker}: Saved {len(df)} rows (new file)")
 
-
 for stage, tickers in config["universe"].items():
     for ticker in tickers:
         filepath = os.path.join(project_root, "data", "raw", f"{ticker}.csv")
-
 
         #Takes the old date's data, converts it to datetime format for manipulation, then reconverts it to string for yf.download to work
         if os.path.exists(filepath):
