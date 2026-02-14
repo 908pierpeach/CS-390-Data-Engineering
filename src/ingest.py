@@ -2,6 +2,29 @@ import yaml
 import os
 import pandas as pd
 import yfinance as yf
+import logging
+from datetime import datetime
+
+log_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "logs")
+os.makedirs(log_dir, exist_ok=True)
+
+logger = logging.getLogger("ingest")
+logger.setLevel(logging.DEBUG)
+
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.INFO)
+
+log_filename = os.path.join(log_dir, f"ingest_{datetime.now().strftime('%Y-%m-%d _%H-%M')}.log")
+file_handler = logging.FileHandler(log_filename)
+file_handler.setLevel(logging.DEBUG)
+
+formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+
+console_handler.setFormatter(formatter)
+logger.addHandler(console_handler)
+
+file_handler.setFormatter(formatter)
+logger.addHandler(file_handler)
 
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 config_path = os.path.join(project_root, "config.yaml")
@@ -12,10 +35,12 @@ with open(config_path, "r") as f:
 
 start_date = config["ingestion"]["start_date"]
 if config["ingestion"]["end_date"] == "today":
-    from datetime import datetime
     end_date = datetime.today().strftime('%Y-%m-%d')
 else:
     end_date = config["ingestion"]["end_date"]
+
+logger.debug(f"start_date: {start_date}")
+logger.debug(f"end_date: {end_date}")
 
 def fetch_ticker(ticker, start_date, end_date):
     """
@@ -24,14 +49,14 @@ def fetch_ticker(ticker, start_date, end_date):
     Returns None if the fetch fails.
     """
     try:
-        print(f"Fetching {ticker}...")
+        logger.info(f"Fetching {ticker}...")
         df = yf.download(ticker, start=start_date, end=end_date, auto_adjust = True, progress=False)
 
         if isinstance(df.columns, pd.MultiIndex):
             df.columns = df.columns.get_level_values(0)
 
         if df.empty:
-            print(f"  {ticker}: No data returned")
+            logger.warning(f"{ticker}: No data returned")
             return None
 
         # Keep only the columns we need
@@ -39,11 +64,11 @@ def fetch_ticker(ticker, start_date, end_date):
         df.index.name = "Date"
         df = df.reset_index()
 
-        print(f"  {ticker}: Got {len(df)} rows")
+        logger.info(f"{ticker}: Got {len(df)} rows")
         return df
 
     except Exception as e:
-        print(f"  {ticker}: FAILED - {e}")
+        logger.error(f"{ticker}: FAILED - {e}")
         return None
 
 def save_or_append_ticker(ticker, df):
@@ -57,20 +82,23 @@ def save_or_append_ticker(ticker, df):
 
     if os.path.exists(filepath):
         df_old = pd.read_csv(filepath)
+        logger.debug(f"{ticker}: Loaded {len(df_old)} rows")
 
         df_old['Date'] = pd.to_datetime(df_old['Date'])
         df['Date'] = pd.to_datetime(df['Date'])
 
         df_combined = pd.concat([df_old, df], ignore_index=True)
-
+        df_combined = df_combined.drop_duplicates(subset='Date', keep='last')
+        df_combined = df_combined.sort_values('Date')
         df_combined['Date'] = df_combined['Date'].dt.strftime('%Y-%m-%d')
+        logger.debug(f"{ticker}: Saving {len(df_combined)} rows")
 
         df_combined.to_csv(filepath, index=False)
-        print(f"  {ticker}: Appended {len(df)} new rows (total: {len(df_combined)})")
+        logger.info(f"{ticker}: Appended {len(df)} new rows (total: {len(df_combined)})")
 
     else:
         df.to_csv(filepath, index=False)
-        print(f"  {ticker}: Saved {len(df)} rows (new file)")
+        logger.info(f"{ticker}: Saved {len(df)} rows (new file)")
 
 for stage, tickers in config["universe"].items():
     for ticker in tickers:
@@ -84,9 +112,10 @@ for stage, tickers in config["universe"].items():
         else:
             fetch_start = start_date
 
+        logger.debug(f"{ticker}: Fetching range {fetch_start} to {end_date}")
         df = fetch_ticker(ticker, fetch_start, end_date)
 
         if df is not None and not df.empty:
             save_or_append_ticker(ticker, df)
         else:
-            print(f"  {ticker}: Skipping (no new data)")
+            logger.info(f"{ticker}: Skipping (no new data)")
