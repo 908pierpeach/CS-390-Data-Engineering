@@ -37,7 +37,9 @@ returns_dict = {}
 for stage, tickers in config["universe"].items():
     for ticker in tickers:
         try:
-            df = pd.read_csv(os.path.join(project_root, "data", "raw", f"{ticker}.csv"))
+            filepath = os.path.join(project_root, "data", "raw", f"{ticker}.csv")
+            logger.debug(f"{ticker}: Reading {filepath}")
+            df = pd.read_csv(filepath)
             df["Date"] = pd.to_datetime(df["Date"])
             df = df.set_index("Date")
             close = pd.to_numeric(df["Close"])
@@ -49,7 +51,7 @@ for stage, tickers in config["universe"].items():
 
 
 combined_df = pd.DataFrame(returns_dict)
-logger.info(f"{len(combined_df)} rows combined")
+logger.info(f"Saved combined returns: {combined_df.shape[0]} rows x {combined_df.shape[1]} tickers")
 
 processed_dir = os.path.join(project_root, "data", "processed")
 os.makedirs(processed_dir, exist_ok=True)
