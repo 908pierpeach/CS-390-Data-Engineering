@@ -11,3 +11,5 @@ with open(df, "r") as f:
     config = yaml.safe_load(f)
 
 correlations_dict = {}
+for ticker in config["tickers"]:
+    df.corr()
