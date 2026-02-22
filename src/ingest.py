@@ -54,6 +54,9 @@ def fetch_ticker(ticker, start_date, end_date):
 
         if isinstance(df.columns, pd.MultiIndex):
             df.columns = df.columns.get_level_values(0)
+        for col in ["Open", "High", "Low", "Close"]:
+            df[col] = pd.to_numeric(df[col], errors="coerce")
+        df = df.dropna(subset=["Open", "High", "Low", "Close"])
 
         if df.empty:
             logger.warning(f"{ticker}: No data returned")
