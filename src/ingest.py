@@ -5,44 +5,65 @@ import yfinance as yf
 import logging
 from datetime import datetime
 
-log_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "logs")
-os.makedirs(log_dir, exist_ok=True)
+def main():
+    log_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "logs")
+    os.makedirs(log_dir, exist_ok=True)
 
-logger = logging.getLogger("ingest")
-logger.setLevel(logging.DEBUG)
+    logger = logging.getLogger("ingest")
+    logger.setLevel(logging.DEBUG)
 
-console_handler = logging.StreamHandler()
-console_handler.setLevel(logging.INFO)
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(logging.INFO)
 
-log_filename = os.path.join(log_dir, f"ingest_{datetime.now().strftime('%Y-%m-%d _%H-%M')}.log")
-file_handler = logging.FileHandler(log_filename)
-file_handler.setLevel(logging.DEBUG)
+    log_filename = os.path.join(log_dir, f"ingest_{datetime.now().strftime('%Y-%m-%d _%H-%M')}.log")
+    file_handler = logging.FileHandler(log_filename)
+    file_handler.setLevel(logging.DEBUG)
 
-formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+    formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
 
-console_handler.setFormatter(formatter)
-logger.addHandler(console_handler)
+    console_handler.setFormatter(formatter)
+    logger.addHandler(console_handler)
 
-file_handler.setFormatter(formatter)
-logger.addHandler(file_handler)
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
 
-project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-config_path = os.path.join(project_root, "config.yaml")
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    config_path = os.path.join(project_root, "config.yaml")
 
-# Load the config
-with open(config_path, "r") as f:
-    config = yaml.safe_load(f)
+    # Load the config
+    with open(config_path, "r") as f:
+        config = yaml.safe_load(f)
 
-start_date = config["ingestion"]["start_date"]
-if config["ingestion"]["end_date"] == "today":
-    end_date = datetime.today().strftime('%Y-%m-%d')
-else:
-    end_date = config["ingestion"]["end_date"]
+    start_date = config["ingestion"]["start_date"]
+    if config["ingestion"]["end_date"] == "today":
+        end_date = datetime.today().strftime('%Y-%m-%d')
+    else:
+        end_date = config["ingestion"]["end_date"]
 
-logger.debug(f"start_date: {start_date}")
-logger.debug(f"end_date: {end_date}")
+    logger.debug(f"start_date: {start_date}")
+    logger.debug(f"end_date: {end_date}")
 
-def fetch_ticker(ticker, start_date, end_date):
+    for stage, tickers in config["universe"].items():
+        for ticker in tickers:
+            filepath = os.path.join(project_root, "data", "raw", f"{ticker}.csv")
+
+            # Takes the old date's data, converts it to datetime format for manipulation, then reconverts it to string for yf.download to work
+            if os.path.exists(filepath):
+                df_old = pd.read_csv(filepath)
+                latest_date = pd.to_datetime(df_old['Date']).max()
+                fetch_start = (latest_date + pd.Timedelta(days=1)).strftime("%Y-%m-%d")
+            else:
+                fetch_start = start_date
+
+            logger.debug(f"{ticker}: Fetching range {fetch_start} to {end_date}")
+            df = fetch_ticker(ticker, fetch_start, end_date, logger)
+
+            if df is not None and not df.empty:
+                save_or_append_ticker(ticker, df, project_root, logger)
+            else:
+                logger.info(f"{ticker}: Skipping (no new data)")
+
+def fetch_ticker(ticker, start_date, end_date, logger):
     """
     Fetch daily price and volume data for a single ticker.
     Returns a DataFrame with Date, Open, High, Low, Close.
@@ -74,7 +95,7 @@ def fetch_ticker(ticker, start_date, end_date):
         logger.error(f"{ticker}: FAILED - {e}")
         return None
 
-def save_or_append_ticker(ticker, df):
+def save_or_append_ticker(ticker, df, project_root, logger):
     """
     Save a ticker's DataFrame to data/raw/{TICKER}.csv
     """
@@ -103,22 +124,6 @@ def save_or_append_ticker(ticker, df):
         df.to_csv(filepath, index=False)
         logger.info(f"{ticker}: Saved {len(df)} rows (new file)")
 
-for stage, tickers in config["universe"].items():
-    for ticker in tickers:
-        filepath = os.path.join(project_root, "data", "raw", f"{ticker}.csv")
 
-        #Takes the old date's data, converts it to datetime format for manipulation, then reconverts it to string for yf.download to work
-        if os.path.exists(filepath):
-            df_old = pd.read_csv(filepath)
-            latest_date = pd.to_datetime(df_old['Date']).max()
-            fetch_start = (latest_date + pd.Timedelta(days=1)).strftime("%Y-%m-%d")
-        else:
-            fetch_start = start_date
-
-        logger.debug(f"{ticker}: Fetching range {fetch_start} to {end_date}")
-        df = fetch_ticker(ticker, fetch_start, end_date)
-
-        if df is not None and not df.empty:
-            save_or_append_ticker(ticker, df)
-        else:
-            logger.info(f"{ticker}: Skipping (no new data)")
+if __name__ == "__main__":
+    main()
