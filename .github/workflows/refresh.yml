@@ -22,7 +22,7 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Write credentials file
-        run: echo '${{ secrets.GOOGLE_CREDENTIALS }}' > credentials.json
+        run: echo '${{ secrets.GOOGLE_CREDENTIALS }}' > pipeline_credentials.json
 
       - name: Run pipeline
         run: python run_pipeline.py
