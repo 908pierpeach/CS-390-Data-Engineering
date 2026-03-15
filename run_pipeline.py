@@ -11,6 +11,7 @@ steps = [
     ("Lead-Lag",    os.path.join("src", "lead_lag.py")),
     ("Drawdown",    os.path.join("src", "drawdown.py")),
     ("Sharpe",      os.path.join("src", "sharpe.py")),
+    ("Sheets Push", os.path.join("src", "push_to_sheets.py")),
 ]
 
 def main():
