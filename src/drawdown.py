@@ -21,7 +21,12 @@ def main():
             max_results.append({"ticker": ticker, "max_drawdown": max_drawdown, "date": max_drawdown_date})
 
     max_drawdown_df = pd.DataFrame(max_results)
-    drawdown_series_df = pd.DataFrame(series_results, index = df.index)
+    drawdown_series_df = pd.DataFrame(series_results, index=df.index)
+    drawdown_series_df.index = pd.to_datetime(drawdown_series_df.index)
+    drawdown_series_df = drawdown_series_df.reindex(
+        pd.date_range(drawdown_series_df.index.min(), drawdown_series_df.index.max(), freq="D")
+    ).ffill()
+    drawdown_series_df.index.name = "Date"
     max_drawdown_df.to_csv(os.path.join(processed_dir, "max_drawdown.csv"), index=False)
     drawdown_series_df.to_csv(os.path.join(processed_dir, "drawdown_series.csv"))
 
