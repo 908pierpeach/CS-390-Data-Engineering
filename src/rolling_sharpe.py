@@ -10,9 +10,18 @@ def main():
     simple_returns = np.exp(df) - 1
     rolling_mean = simple_returns.rolling(252).mean() * 252
     rolling_std = simple_returns.rolling(252).std() * np.sqrt(252)
+
     rolling_sharpe = rolling_mean / rolling_std
+
+    rolling_sharpe = rolling_sharpe.dropna()
+    rolling_sharpe.index = pd.to_datetime(rolling_sharpe.index)
+    rolling_sharpe = rolling_sharpe.reindex(
+        pd.date_range(rolling_sharpe.index.min(), rolling_sharpe.index.max(), freq="D")
+    ).ffill()
+    rolling_sharpe.index.name = "Date"
 
     rolling_sharpe.to_csv(os.path.join(processed_dir, "rolling_sharpe.csv"))
 
 if __name__ == "__main__":
     main()
+
