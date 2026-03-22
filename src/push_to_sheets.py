@@ -24,6 +24,7 @@ def main():
         ("max_drawdown", "max_drawdown.csv", False),
         ("drawdown_series", "drawdown_series.csv", True),
         ("sharpes", "sharpes.csv", False),
+        ("rolling_sharpe", "rolling_sharpe.csv", True),
     ]
 
     for tab_name, filename, has_index in files:
