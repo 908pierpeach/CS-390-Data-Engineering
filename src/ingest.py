@@ -4,6 +4,7 @@ import pandas as pd
 import yfinance as yf
 import logging
 from datetime import datetime
+import time
 
 def main():
     log_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "logs")
@@ -57,6 +58,7 @@ def main():
 
             logger.debug(f"{ticker}: Fetching range {fetch_start} to {end_date}")
             df = fetch_ticker(ticker, fetch_start, end_date, logger)
+            time.sleep(1)
 
             if df is not None and not df.empty:
                 save_or_append_ticker(ticker, df, project_root, logger)
