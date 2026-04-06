@@ -10,6 +10,7 @@ def main():
 
     max_results = []
     series_results = {}
+    spy_returns = df["SPY"]
 
     for ticker in df.columns:
             cumulative = np.exp(df[ticker].cumsum())
@@ -18,7 +19,8 @@ def main():
             max_drawdown = drawdown.min()
             max_drawdown_date = drawdown.idxmin()
             series_results[ticker] = drawdown
-            max_results.append({"ticker": ticker, "max_drawdown": max_drawdown, "date": max_drawdown_date})
+            beta = df[ticker].cov(spy_returns) / spy_returns.var()
+            max_results.append({"ticker": ticker, "max_drawdown": max_drawdown, "date": max_drawdown_date, "beta": beta})
 
     max_drawdown_df = pd.DataFrame(max_results)
     drawdown_series_df = pd.DataFrame(series_results, index=df.index)
