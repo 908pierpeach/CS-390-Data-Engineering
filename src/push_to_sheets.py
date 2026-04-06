@@ -25,6 +25,7 @@ def main():
         ("drawdown_series", "drawdown_series.csv", True),
         ("sharpes", "sharpes.csv", False),
         ("rolling_sharpe", "rolling_sharpe.csv", True),
+        ("cumulative_returns", "cumulative_returns.csv", False),
     ]
 
     for tab_name, filename, has_index in files:

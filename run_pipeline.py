@@ -12,6 +12,7 @@ steps = [
     ("Drawdown",    os.path.join("src", "drawdown.py")),
     ("Sharpe",      os.path.join("src", "sharpe.py")),
     ("Rolling Sharpe", os.path.join("src", "rolling_sharpe.py")),
+    ("Cumulative Returns", os.path.join("src", "cumulative_returns.py"))
     ("Sheets Push", os.path.join("src", "push_to_sheets.py")),
 ]
 
