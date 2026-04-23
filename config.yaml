@@ -1,4 +1,6 @@
-# Semiconductor Supply Chain Analytics — Pipeline Configuration
+# Pipeline Configuration
+
+industry: "Semiconductors"
 
 ingestion:
   start_date: "2020-01-01"
@@ -11,7 +13,7 @@ universe:
     - LRCX
     - AMAT
   foundry:
-    - TSM          
+    - TSM
   designers:
     - NVDA
     - AVGO
