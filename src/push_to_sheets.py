@@ -2,11 +2,15 @@ import gspread
 from google.oauth2.service_account import Credentials
 import pandas as pd
 import os
+import yaml
 
 def main():
     project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     processed_dir = os.path.join(project_root, "data", "processed")
     creds_path = os.path.join(project_root, "pipeline_credentials.json")
+
+    with open(os.path.join(project_root, "config.yaml")) as f:
+        config = yaml.safe_load(f)
 
     scopes = [
         "https://www.googleapis.com/auth/spreadsheets",
@@ -15,7 +19,8 @@ def main():
     creds = Credentials.from_service_account_file(creds_path, scopes=scopes)
     client = gspread.authorize(creds)
 
-    sheet = client.open("Semiconductor Pipeline Data Engineering")
+    sheet_name = f"{config['industry']} Pipeline Data Engineering"
+    sheet = client.open(sheet_name)
 
     files = [
         ("returns_combined", "returns_combined.csv", True),
