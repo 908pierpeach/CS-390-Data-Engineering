@@ -1,28 +1,30 @@
 # Pipeline Configuration
 
-industry: "Financials"
+industry: "Semiconductors"
 
 ingestion:
   start_date: "2020-01-01"
   end_date: "today"
 
 universe:
-  money_center_banks:
-    - JPM
-    - BAC
-    - WFC
-    - C
-  investment_banks:
-    - GS
-    - MS
-  asset_managers:
-    - BLK
-    - SCHW
-  insurers:
-    - AIG
-    - MET
-    - PRU
+  equipment:
+    - ASML
+    - KLAC
+    - LRCX
+    - AMAT
+  foundry:
+    - TSM
+  designers:
+    - NVDA
+    - AVGO
+    - AMD
+    - QCOM
+    - TXN
+    - MRVL
+  idms:
+    - MU
+    - INTC
   benchmarks:
-    - XLF
-    - KBE
+    - SMH
+    - SOXX
     - SPY
